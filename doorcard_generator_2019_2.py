@@ -5,18 +5,34 @@ import os
 import math
 import glob
 import ntpath
+from openpyxl import load_workbook
+
+wb = load_workbook(filename = 'firebirds1920s1.xlsx')
+sheet = wb['Sheet1']
+rows = range(2, 83)
+cols = ['G', 'H', 'I']
+person_lists = []
+for r in rows:
+    person = []
+    for c in cols:
+        person.append(sheet[c + str(r)].value)
+    person_lists.append(person)
+
+print(person_lists)
+
 
 def get_name(path):
     head, tail = ntpath.split(path)
     return (tail or ntpath.basename(head))
 
-def generate_doorcard(src, bg_path, font_path):
+def generate_doorcard(src, name, major, song_text):
 
     bg = Image.new(mode = "RGB", size = (2290, 1440), color = (179, 32, 32))
+    font_path = curr_path + "/JosefinSans-SemiBold.ttf"
 
     fontsize = 160  # starting font size
     path, file_ext = os.path.splitext(src)
-    name = get_name(path).upper()
+    name = name.upper()
     img = Image.open(src).convert("RGBA")   
     name_font = ImageFont.truetype(font_path, fontsize)
     text_l, text_h = (name_font.getsize(name))
@@ -64,7 +80,6 @@ def generate_doorcard(src, bg_path, font_path):
     d.text((text_w, text_h), name, (255,255,255), font=name_font)
 
     major_font = ImageFont.truetype(font_path, 60)
-    major = "Information Security"
     major_w = math.floor(centre - major_font.getsize(major)[0] / 2)
     major_h = text_h + name_font.getsize(name)[1] + 50
     d.text((major_w, major_h), major, (255,255,255), font=major_font)
@@ -91,7 +106,6 @@ def generate_doorcard(src, bg_path, font_path):
 
     WHITE = (255,255,255)
 
-    song_text = "dhfapdfioajfijadoifjoiadfijpadfjadpfjaiofsdojfpafdspji"
     song_font = ImageFont.truetype(font_path, 60)
     song_x = centre - math.floor(song_font.getsize(song_text)[0] / 2)
     song_y = 750
@@ -108,16 +122,16 @@ def generate_doorcard(src, bg_path, font_path):
         line_text = ""
         fontsize = 60
         font = ImageFont.truetype(font_path, fontsize)
-        for char in text:
+        for word in text.split(" "):
             print(line_text)
-            print(font.getsize(line_text + char)[0], " ", width)
-            if font.getsize(line_text + char)[0] > width: #correct later
+            print(font.getsize(line_text + word)[0], " ", width)
+            if font.getsize(line_text + word)[0] > width: #correct later
                 line_text += '\n'
                 lines.append(line_text)
-                line_text = char
+                line_text = word
                 
             else:
-                line_text += char
+                line_text += word
         lines.append(line_text)
         return ''.join(lines)
     
@@ -141,13 +155,15 @@ os.chdir("input")
 src_array = os.listdir()
 
 bg_path = curr_path + "/bg2.png"
-print(bg_path)
-font_path = curr_path + "/JosefinSans-SemiBold.ttf"
 
 # src_array = [src_array[-1]] #! DELETE LATER
 
-for f in src_array:
-    generate_doorcard(f, bg_path, font_path)
+# get list of [src, name, song_text]
+# person_lists = [[src_array[0], "Derpy", "Projects and Facilities Management", "hurts 2b human - P!nk & Khalid"]]
+
+# def generate_doorcard(src, name, major, song_text):
+# for person in person_lists:
+#     generate_doorcard(*person)
 
 # generate_doorcard("C:\\Users\\derpy\\Pictures\\doorcard_pics\\Wen Cong.jpg")
 
