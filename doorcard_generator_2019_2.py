@@ -84,19 +84,50 @@ def generate_doorcard(src, bg_path, font_path):
     emblem = emblem.resize((emblem_w,emblem_w), Image.ANTIALIAS)
     bg.paste(emblem, (math.floor(2290/4*3-emblem_w/2), 1100), emblem)
 
-    # song_text = "A song that describes me:"
-    # song_font = ImageFont.truetype(font_path, 50)
-    # song_w = centre - math.floor(song_font.getsize(song_text)[0] / 2)
-    # song_h = 600
+    SONG_HDR = "A song that describes me:"
+    SONG_HDR_FONT = ImageFont.truetype(font_path, 50)
+    SONG_HDR_X = centre - math.floor(SONG_HDR_FONT.getsize(SONG_HDR)[0] / 2)
+    SONG_HDR_Y = 600
 
-    # song2_text = "You're Beautiful \n\nby James Blunt"
-    # song2_font = ImageFont.truetype(font_path, 80)
-    # song2_w = centre - math.floor(song2_font.getsize(song2_text)[0] / 4)
-    # song2_h = 750
+    WHITE = (255,255,255)
 
-    # d.text((song_w, song_h), song_text, (255,255,255), font=song_font)
-    # d.rectangle([(centre - 400, 700), (centre + 400, 1000)], (255,255,255), (255,255,255), 0)
-    # d.text((song2_w, song2_h), song2_text, (179, 32, 32), font=song2_font)
+    song_text = "dhfapdfioajfijadoifjoiadfijpadfjadpfjaiofsdojfpafdspji"
+    song_font = ImageFont.truetype(font_path, 60)
+    song_x = centre - math.floor(song_font.getsize(song_text)[0] / 2)
+    song_y = 750
+
+    box_coords_x = centre - 400
+    box_coords_y = 700
+    box_width = 800
+    box_height = 300
+    box_margin = 100
+    box_text_length = box_width - box_margin * 2
+
+    def wrap_text(text, width):
+        lines = []
+        line_text = ""
+        fontsize = 60
+        font = ImageFont.truetype(font_path, fontsize)
+        for char in text:
+            print(line_text)
+            print(font.getsize(line_text + char)[0], " ", width)
+            if font.getsize(line_text + char)[0] > width: #correct later
+                line_text += '\n'
+                lines.append(line_text)
+                line_text = char
+                
+            else:
+                line_text += char
+        lines.append(line_text)
+        return ''.join(lines)
+    
+
+    # 1 insert newlines when length of text exceeds text_len
+    # 2 displace by margin length
+
+    d.text((SONG_HDR_X, SONG_HDR_Y), SONG_HDR, WHITE, font=SONG_HDR_FONT)
+    d.rectangle([(box_coords_x, box_coords_y), (box_coords_x + box_width, box_coords_y + box_height)], WHITE, WHITE, 0)
+    d.text((box_coords_x + box_margin, box_coords_y + 50), wrap_text(song_text, box_text_length), (179, 32, 32), font=song_font)
     
 
     # save
