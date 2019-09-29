@@ -6,26 +6,16 @@ import math
 import glob
 import ntpath
 from openpyxl import load_workbook
+import pprint
 
-wb = load_workbook(filename = 'firebirds1920s1.xlsx')
-sheet = wb['Sheet1']
-rows = range(2, 83)
-cols = ['G', 'H', 'I']
-person_lists = []
-for r in rows:
-    person = []
-    for c in cols:
-        person.append(sheet[c + str(r)].value)
-    person_lists.append(person)
-
-print(person_lists)
+# print(person_lists)
 
 
 def get_name(path):
     head, tail = ntpath.split(path)
     return (tail or ntpath.basename(head))
 
-def generate_doorcard(src, name, major, song_text):
+def generate_doorcard(src, name, major, song_text, rotate_dir):
 
     bg = Image.new(mode = "RGB", size = (2290, 1440), color = (179, 32, 32))
     font_path = curr_path + "/JosefinSans-SemiBold.ttf"
@@ -33,6 +23,7 @@ def generate_doorcard(src, name, major, song_text):
     fontsize = 160  # starting font size
     path, file_ext = os.path.splitext(src)
     name = name.upper()
+    print(name)
     img = Image.open(src).convert("RGBA")   
     name_font = ImageFont.truetype(font_path, fontsize)
     text_l, text_h = (name_font.getsize(name))
@@ -40,11 +31,16 @@ def generate_doorcard(src, name, major, song_text):
 
     def cropz(img, w, h):
         img_w, img_h = img.size
+        if img_w > img_h:
+            img = img.rotate(90)
+        if rotate_dir:
+            img = img.rotate(180)
+        
         scaled_width = w
         scaled_height = math.floor(w / img_w * img_h) # stretch img to given width
-        print(w, img_w, img_h)
-        print("old Image size: " + str(img_w) + " " + str(img_h))
-        print("new Image size: " + str(scaled_width) + " " + str(scaled_height))
+        # print(w, img_w, img_h)
+        # print("old Image size: " + str(img_w) + " " + str(img_h))
+        # print("new Image size: " + str(scaled_width) + " " + str(scaled_height))
         
         img = img.resize((scaled_width, scaled_height), Image.ANTIALIAS)
         x = img_w//2 - w//2
@@ -56,6 +52,9 @@ def generate_doorcard(src, name, major, song_text):
 
 
     # crop & paste photo
+    img_w, img_h = img.size
+    if img_w > img_h:
+        img = img.rotate(90, expand=True)
     cropped_img = cropz(img, bg_w // 2, bg_h)
     bg.paste(cropped_img, (0, 0), cropped_img)
 
@@ -64,25 +63,27 @@ def generate_doorcard(src, name, major, song_text):
     TEXT_LENGTH = 900
     font_size = 50
     name_font = ImageFont.truetype(font_path, font_size)
-    while name_font.getsize(name)[0] < TEXT_LENGTH:
-        # iterate until the text size is just larger than the criteria
-        font_size += 10
-        name_font = ImageFont.truetype(font_path, font_size)
+    if len(name) < 4:
+        name_font = ImageFont.truetype(font_path, 400)
+    else:    
+        while name_font.getsize(name)[0] < TEXT_LENGTH:
+            # iterate until the text size is just larger than the criteria
+            font_size += 10
+            name_font = ImageFont.truetype(font_path, font_size)
 
     d = ImageDraw.Draw(bg)
 
     centre = 1145 + 1145/2
     text_w = math.floor(centre - name_font.getsize(name)[0] / 2)
     text_h = 250 - math.floor(name_font.getsize(name)[1] / 2)
+    major_h = 0
+    if len(name) < 4:
+        text_h += 75
+        major_h += 0
     
     # from centre of above, minus half of length of major name
     
-    d.text((text_w, text_h), name, (255,255,255), font=name_font)
-
-    major_font = ImageFont.truetype(font_path, 60)
-    major_w = math.floor(centre - major_font.getsize(major)[0] / 2)
-    major_h = text_h + name_font.getsize(name)[1] + 50
-    d.text((major_w, major_h), major, (255,255,255), font=major_font)
+    
 
     # draw outlines
 
@@ -106,9 +107,7 @@ def generate_doorcard(src, name, major, song_text):
 
     WHITE = (255,255,255)
 
-    song_font = ImageFont.truetype(font_path, 60)
-    song_x = centre - math.floor(song_font.getsize(song_text)[0] / 2)
-    song_y = 750
+    
 
     box_coords_x = centre - 400
     box_coords_y = 700
@@ -118,30 +117,54 @@ def generate_doorcard(src, name, major, song_text):
     box_text_length = box_width - box_margin * 2
 
     def wrap_text(text, width):
-        lines = []
+        lines = []  
         line_text = ""
         fontsize = 60
         font = ImageFont.truetype(font_path, fontsize)
         for word in text.split(" "):
-            print(line_text)
-            print(font.getsize(line_text + word)[0], " ", width)
-            if font.getsize(line_text + word)[0] > width: #correct later
+            # print(line_text)
+            # print(font.getsize(line_text + " " + word)[0], " ", width)
+            if font.getsize(line_text + " " + word)[0] > width: #correct later
                 line_text += '\n'
                 lines.append(line_text)
                 line_text = word
                 
             else:
-                line_text += word
+                line_text += " " + word
         lines.append(line_text)
-        return ''.join(lines)
+        return (''.join(lines))[1:]
     
 
     # 1 insert newlines when length of text exceeds text_len
     # 2 displace by margin length
 
-    d.text((SONG_HDR_X, SONG_HDR_Y), SONG_HDR, WHITE, font=SONG_HDR_FONT)
-    d.rectangle([(box_coords_x, box_coords_y), (box_coords_x + box_width, box_coords_y + box_height)], WHITE, WHITE, 0)
-    d.text((box_coords_x + box_margin, box_coords_y + 50), wrap_text(song_text, box_text_length), (179, 32, 32), font=song_font)
+    if song_text:
+
+        d.text((text_w, text_h), name, (255,255,255), font=name_font)
+
+        major_font = ImageFont.truetype(font_path, 60)
+        major_w = math.floor(centre - major_font.getsize(major)[0] / 2)
+        major_h += text_h + name_font.getsize(name)[1] + 50
+        d.text((major_w, major_h), major, (255,255,255), font=major_font)
+
+        song_font = ImageFont.truetype(font_path, 60)
+        song_x = centre - math.floor(song_font.getsize(song_text)[0] / 2)
+        song_y = 750
+
+        d.text((SONG_HDR_X, SONG_HDR_Y), SONG_HDR, WHITE, font=SONG_HDR_FONT)
+        d.rectangle([(box_coords_x, box_coords_y), (box_coords_x + box_width, box_coords_y + box_height)], WHITE, WHITE, 0)
+        d.text((box_coords_x + box_margin, box_coords_y + 50), wrap_text(song_text, box_text_length), (179, 32, 32), font=song_font)
+
+    else:
+
+        displ = 350
+
+        d.text((text_w, text_h + displ), name, (255,255,255), font=name_font)
+
+        major_font = ImageFont.truetype(font_path, 60)
+        major_w = math.floor(centre - major_font.getsize(major)[0] / 2)
+        major_h += text_h + name_font.getsize(name)[1] + displ + 40
+        d.text((major_w, major_h), major, (255,255,255), font=major_font)
     
 
     # save
@@ -153,18 +176,33 @@ curr_path = os.getcwd()
 print(curr_path)
 os.chdir("input")
 src_array = os.listdir()
+print(src_array)
+ids = []
+for src in src_array:
+    path, file_ext = os.path.splitext(src)
+    ids.append(path.split('\\')[0].upper())
+
+os.chdir("..")
+
+wb = load_workbook(filename = 'firebirds1920s1.xlsx')
+sheet = wb['Sheet1']
+cols = ['G', 'H', 'I', 'L']
+person_lists = []
+for r in ids:
+    person = [r + ".jpg"]
+    for c in cols:
+        person.append(sheet[c + str(int(r) + 1)].value)
+    person_lists.append(person)
+
+pprint.pprint(person_lists)
+
 
 bg_path = curr_path + "/bg2.png"
 
-# src_array = [src_array[-1]] #! DELETE LATER
-
-# get list of [src, name, song_text]
-# person_lists = [[src_array[0], "Derpy", "Projects and Facilities Management", "hurts 2b human - P!nk & Khalid"]]
-
 # def generate_doorcard(src, name, major, song_text):
-# for person in person_lists:
-#     generate_doorcard(*person)
+os.chdir("input")
+for person in person_lists:
+    generate_doorcard(*person)
 
-# generate_doorcard("C:\\Users\\derpy\\Pictures\\doorcard_pics\\Wen Cong.jpg")
 
 print("Done!")
