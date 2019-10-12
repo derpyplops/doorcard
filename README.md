@@ -1,5 +1,9 @@
 Python application that automates printing of doorcards/postcards for personal use given any amount of input images.
 
+**Features**
+- Dynamic: Can insert content into page.
+- Dynamic name length and positioning.
+
 To use: 
 
 0. Create folders 'input' and 'output' and put them in the same folder as your script.
