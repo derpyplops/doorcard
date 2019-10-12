@@ -7,4 +7,8 @@ To use:
 2. Change filenames in script to match the directory your project is in.
 3. Run `python3 doorcards.py`
 
+Example output:
+
+![](DERPY.png)
+
 Future development plans: Automate script with telegram bot for increased accessibility.
